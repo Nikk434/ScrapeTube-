@@ -54,23 +54,22 @@ def download_youtube_playlist(playlist_url, download_path):
 
     print("Download completed.")
 
-playlist_url = '' #paste your Playlist url
-
-download_path = '' #your download path
-
-download_youtube_playlist(playlist_url, download_path)
 
 @app.route('/api/download', methods=['POST'])
 def download_playlist():
     data = request.json
+    print(data)
     playlist_url = data.get('url')
+    print(playlist_url)
     download_path = './downloads'  # a safe temp folder
     
     try:
         download_youtube_playlist(playlist_url, download_path)
         return jsonify({'status': 'success'})
     except Exception as e:
+        print(e)
         return jsonify({'status': 'error', 'message': str(e)}), 500
+    
 
 if __name__ =="__main__":
     app.run(host="0.0.0.0",port=5000,debug=True)

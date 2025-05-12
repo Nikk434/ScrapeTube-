@@ -1,6 +1,4 @@
-from pytube import Playlist
-
-import ffmpeg
+import yt_dlp
 import os
 import re
 from flask import Flask, request, jsonify
@@ -23,58 +21,19 @@ def sanitize_filename(filename):
 
 def download_youtube_playlist(playlist_url, download_path):
     print(f"[INFO] Attempting to download playlist from: {playlist_url}")
-    
-    playlist = Playlist(playlist_url)
-    print(f"[INFO] Playlist title: {playlist.title}")
-    print(f"[INFO] Total videos found: {len(playlist.video_urls)}")
 
-    for video in playlist.videos:
-        try:
-            print(f"[DEBUG] Processing video: {video.watch_url}")
-            sanitized_title = sanitize_filename(video.title)
-            final_path = os.path.join(download_path, f'{sanitized_title}.mp4')
+    # yt-dlp handles playlist processing itself
+    ydl_opts = {
+        'format': 'bestvideo[height<=1080]+bestaudio/best',
+        'outtmpl': os.path.join(download_path, '%(title).200s.%(ext)s'),
+        'merge_output_format': 'mp4',
+        'noplaylist': False,
+        'quiet': False,
+        'progress_hooks': [lambda d: print(f"[YT-DLP] {d['status'].upper()}: {d.get('filename', '')}")],
+    }
 
-            if os.path.exists(final_path):
-                print(f"[SKIP] Already downloaded: {sanitized_title}")
-                continue
-
-            print(f"[INFO] Downloading: {sanitized_title}")
-            
-            video_stream = video.streams.filter(res="1080p").first()
-            audio_stream = video.streams.filter(only_audio=True, mime_type="audio/mp4").order_by("abr").desc().first()
-
-            video_path = os.path.join(download_path, f'{sanitized_title}_video.mp4')
-            audio_path = os.path.join(download_path, f'{sanitized_title}_audio.mp4')
-
-            if video_stream:
-                print(f"[DEBUG] Downloading video stream...")
-                video_stream.download(output_path=download_path, filename=f'{sanitized_title}_video.mp4')
-            else:
-                print(f"[WARNING] No 1080p video stream found for: {sanitized_title}")
-
-            if audio_stream:
-                print(f"[DEBUG] Downloading audio stream...")
-                audio_stream.download(output_path=download_path, filename=f'{sanitized_title}_audio.mp4')
-            else:
-                print(f"[WARNING] No audio stream found for: {sanitized_title}")
-
-            if video_stream and audio_stream:
-                print(f"[DEBUG] Merging video and audio for: {sanitized_title}")
-                video_input = ffmpeg.input(video_path)
-                audio_input = ffmpeg.input(audio_path)
-
-                ffmpeg.output(video_input, audio_input, final_path, vcodec='copy', acodec='aac', strict='experimental').run(overwrite_output=True)
-
-                print(f"[SUCCESS] Merged: {sanitized_title}")
-                os.remove(video_path)
-                os.remove(audio_path)
-
-        except Exception as video_err:
-            print(f"[ERROR] Failed to process video: {video.watch_url} - {video_err}")
-            continue  # skip to next video
-
-        else:
-            print(f"[WARNING] Skipping merge due to missing streams: {sanitized_title}")
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([playlist_url])
 
     print("[INFO] Playlist download completed.")
 

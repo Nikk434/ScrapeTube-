@@ -2,7 +2,14 @@ from pytube import Playlist
 import ffmpeg
 import os
 import re
-
+from flask import (
+    Flask,
+    request,
+    jsonify,
+)
+from flask_cors import CORS
+app = Flask(__name__)
+CORS(app)
 def sanitize_filename(filename):
     return re.sub(r'[<>:"/\\|?*]', '', filename)
 
@@ -53,3 +60,17 @@ download_path = '' #your download path
 
 download_youtube_playlist(playlist_url, download_path)
 
+@app.route('/api/download', methods=['POST'])
+def download_playlist():
+    data = request.json
+    playlist_url = data.get('url')
+    download_path = './downloads'  # a safe temp folder
+    
+    try:
+        download_youtube_playlist(playlist_url, download_path)
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+if __name__ =="__main__":
+    app.run(host="0.0.0.0",port=5000,debug=True)

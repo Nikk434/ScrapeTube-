@@ -34,3 +34,10 @@ download_youtube_playlist(playlist_url, download_path)
 License
 
 Replace the placeholder values in the example with your actual playlist URL and download path. Be sure to install FFmpeg and ensure it is accessible from your system's PATH.
+
+python -m venv venv
+
+venv/Scripts/activate
+
+pip install -r requirements.txt
+

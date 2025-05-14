@@ -4,7 +4,7 @@ export async function POST(req) {
   try {
     const body = await req.json(); // Parse request body
 
-    const API_BASE_URL = process.env.API_BASE_URL;
+    const API_BASE_URL = "http://127.0.0.1:5000/api/download";
     const response = await axios.post(API_BASE_URL, body);
 
     return new Response(JSON.stringify(response.data), {

@@ -1,7 +1,7 @@
-import LoginPage from "./auth/login/page";
+import Home from "./landing/page";
 
-export default function Home() {
+export default function ome() {
   return (
-    <LoginPage/>    
+    <Home/>    
   );
 }

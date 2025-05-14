@@ -1,7 +1,7 @@
 import yt_dlp
 import os
 import re
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -50,11 +50,25 @@ def download_playlist():
     download_path = './downloads'
 
     try:
-        if not os.path.exists(download_path):
-            os.makedirs(download_path)
+        # Clean the downloads folder (optional)
+        for f in os.listdir(download_path):
+            os.remove(os.path.join(download_path, f))
 
         download_youtube_playlist(playlist_url, download_path)
-        return jsonify({'status': 'success'})
+
+        # Get the first downloaded file (assuming one video for simplicity)
+        downloaded_files = os.listdir(download_path)
+        if not downloaded_files:
+            return jsonify({'status': 'error', 'message': 'No files downloaded'}), 500
+
+        file_path = os.path.join(download_path, downloaded_files[0])
+        return send_file(
+            file_path, 
+            as_attachment=True,
+            download_name=os.path.basename(file_path),
+            mimetype='video/mp4'
+        )
+
     except Exception as e:
         print(f"[ERROR] Exception occurred: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500

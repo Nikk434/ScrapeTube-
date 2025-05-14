@@ -69,7 +69,6 @@ export default function Home() {
     }
   };
 
-  // ... Rest of your component JSX stays unchanged ...
 
 
   return (
@@ -143,7 +142,7 @@ export default function Home() {
         {/* Download Status */}
         <main className="container mx-auto py-8 px-4">
         {/* Pass the fetched data to the component */}
-        <YouTubePlaylist payloadData={playlistData} />
+        {/* <YouTubePlaylist payloadData={playlistData} /> */}
         
         {downloadStatus === 'downloading' && (
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 sm:p-8 mb-10 border border-slate-200 dark:border-slate-700 transition-colors">

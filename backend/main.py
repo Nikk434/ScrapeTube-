@@ -59,5 +59,44 @@ def download_playlist():
         print(f"[ERROR] Exception occurred: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+@app.route('/api/playlist_data', methods=['POST'])
+def playlist_data():
+    data = request.json
+    print(f"[REQUEST] Payload: {data}")
+
+    raw_url = data.get('url')
+    if not raw_url:
+        return jsonify({'status': 'error', 'message': 'URL is required'}), 400
+
+    playlist_url = clean_playlist_url(raw_url)
+
+    try:
+        with yt_dlp.YoutubeDL({'quiet': True, 'extract_flat': True}) as ydl:
+            info = ydl.extract_info(playlist_url, download=False)
+            # print("info",info)
+
+        if 'entries' not in info:
+            return jsonify({'status': 'error', 'message': 'No entries found in playlist'}), 404
+
+        playlist_info = {
+            'playlist_title': info.get('title', 'Untitled Playlist'),
+            'video_count': len(info['entries']),
+            'videos': []
+        }
+
+        for entry in info['entries']:
+            playlist_info['videos'].append({
+                'title': entry.get('title', 'Untitled'),
+                'thumbnail': entry['thumbnails'][-1]['url'] if 'thumbnails' in entry and entry['thumbnails'] else '',
+
+                'progress': '0%'
+            })
+
+        return jsonify({'status': 'success', 'data': playlist_info})
+
+    except Exception as e:
+        print(f"[ERROR] Exception occurred in playlist_data: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

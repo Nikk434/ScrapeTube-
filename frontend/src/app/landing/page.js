@@ -1,14 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import DarkModeToggle from '../components/DarkModeToggle';
+import YouTubePlaylist from '../components/ytplaylist_info';
 import { Download, Link, Check, X, PlayCircle, Info, Loader2 } from 'lucide-react';
 
 export default function Home() {
   const [playlistUrl, setPlaylistUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [downloadStatus, setDownloadStatus] = useState('idle'); // 'idle', 'downloading', 'completed', 'error'
   const [error, setError] = useState('');
+  const [downloadStatus, setDownloadStatus] = useState('idle');
+  const [playlistData, setPlaylistData] = useState(null);
+
+  useEffect(() => {
+    // Fetch data from your backend
+    async function fetchPlaylistData() {
+      try {
+        const response = await fetch('/api/playlist_info');
+        const data = await response.json();
+        setPlaylistData(data);
+      } catch (error) {
+        console.error("Failed to fetch playlist data:", error);
+      }
+    }
+
+    fetchPlaylistData();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,7 +35,6 @@ export default function Home() {
       return;
     }
 
-    // Simple validation for YouTube playlist URL
     if (!playlistUrl.includes('youtube.com/playlist') && !playlistUrl.includes('youtu.be')) {
       setError('Please enter a valid YouTube playlist URL');
       return;
@@ -29,8 +45,7 @@ export default function Home() {
     setDownloadStatus('downloading');
 
     try {
-      // Call the backend API
-      const response = await fetch('http://localhost:5000/api/download', {
+      const response = await fetch('/api/landing', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -53,6 +68,9 @@ export default function Home() {
       setIsLoading(false);
     }
   };
+
+  // ... Rest of your component JSX stays unchanged ...
+
 
   return (
     <main className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300">
@@ -123,6 +141,10 @@ export default function Home() {
         </div>
 
         {/* Download Status */}
+        <main className="container mx-auto py-8 px-4">
+        {/* Pass the fetched data to the component */}
+        <YouTubePlaylist payloadData={playlistData} />
+        
         {downloadStatus === 'downloading' && (
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 sm:p-8 mb-10 border border-slate-200 dark:border-slate-700 transition-colors">
             <div className="flex flex-col items-center justify-center">
@@ -132,6 +154,7 @@ export default function Home() {
             </div>
           </div>
         )}
+        </main>
 
         {downloadStatus === 'completed' && (
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 sm:p-8 mb-10 border border-slate-200 dark:border-slate-700 transition-colors">

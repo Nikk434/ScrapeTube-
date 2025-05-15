@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import DarkModeToggle from '../components/DarkModeToggle';
+
 import YouTubePlaylist from '../components/ytplaylist_info';
 import { Download, Link, Check, X, PlayCircle, Info, Loader2 } from 'lucide-react';
 
@@ -53,11 +53,38 @@ export default function Home() {
         body: JSON.stringify({ url: playlistUrl }),
       });
 
-      const data = await response.json();
+      // const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to download playlist');
       }
+
+      // Convert response into a blob
+      const blob = await response.blob();
+      console.log("Blob",blob);
+      
+
+      // Try to extract filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'video.mp4'; // fallback
+
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) {
+          filename = match[1];
+        }
+      }
+
+      // Create a temporary URL for the blob and trigger download
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
 
       setDownloadStatus('completed');
     } catch (error) {
@@ -74,7 +101,7 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300">
       <div className="w-full max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        
+
         {/* Header with Dark Mode Toggle */}
         <div className="flex justify-between items-center mb-12">
           <div className="flex items-center gap-2">
@@ -83,7 +110,7 @@ export default function Home() {
               ScrapeTube
             </h1>
           </div>
-          <DarkModeToggle />
+
         </div>
 
         {/* Hero Section */}
@@ -141,18 +168,18 @@ export default function Home() {
 
         {/* Download Status */}
         <main className="container mx-auto py-8 px-4">
-        {/* Pass the fetched data to the component */}
-        {/* <YouTubePlaylist payloadData={playlistData} /> */}
-        
-        {downloadStatus === 'downloading' && (
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 sm:p-8 mb-10 border border-slate-200 dark:border-slate-700 transition-colors">
-            <div className="flex flex-col items-center justify-center">
-              <div className="w-16 h-16 border-4 border-t-blue-600 dark:border-t-blue-400 border-slate-200 dark:border-slate-700 rounded-full animate-spin mb-4"></div>
-              <h3 className="text-xl font-medium text-slate-800 dark:text-slate-100">Downloading Playlist</h3>
-              <p className="text-slate-600 dark:text-slate-300 mt-2">This may take some time depending on the number of videos.</p>
+          {/* Pass the fetched data to the component */}
+          {/* <YouTubePlaylist payloadData={playlistData} /> */}
+
+          {downloadStatus === 'downloading' && (
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 sm:p-8 mb-10 border border-slate-200 dark:border-slate-700 transition-colors">
+              <div className="flex flex-col items-center justify-center">
+                <div className="w-16 h-16 border-4 border-t-blue-600 dark:border-t-blue-400 border-slate-200 dark:border-slate-700 rounded-full animate-spin mb-4"></div>
+                <h3 className="text-xl font-medium text-slate-800 dark:text-slate-100">Downloading Playlist</h3>
+                <p className="text-slate-600 dark:text-slate-300 mt-2">This may take some time depending on the number of videos.</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
         </main>
 
         {downloadStatus === 'completed' && (
@@ -225,7 +252,7 @@ export default function Home() {
           </div>
           <div className="prose dark:prose-invert max-w-none">
             <p className="text-slate-700 dark:text-slate-300">This YouTube Playlist Downloader uses yt-dlp to efficiently download entire playlists from YouTube. Videos are saved in high quality MP4 format with both video and audio.</p>
-            
+
             <h3 className="text-lg font-semibold mt-6 text-slate-800 dark:text-slate-100 flex items-center gap-2">
               <Check size={20} className="text-green-600 dark:text-green-400" /> Features:
             </h3>
@@ -255,32 +282,7 @@ export default function Home() {
                 Handles YouTube playlist URLs automatically
               </li>
             </ul>
-            
-            <h3 className="text-lg font-semibold mt-6 text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <Info size={20} className="text-blue-600 dark:text-blue-400" /> Technical Details:
-            </h3>
-            <p className="text-slate-700 dark:text-slate-300">The application consists of:</p>
-            <ul className="list-none pl-0 mt-2 space-y-2">
-              <li className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                  <Check size={12} className="text-blue-600 dark:text-blue-400" />
-                </div>
-                Frontend: Next.js React application
-              </li>
-              <li className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                  <Check size={12} className="text-blue-600 dark:text-blue-400" />
-                </div>
-                Backend: Flask API with yt-dlp integration
-              </li>
-              <li className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                  <Check size={12} className="text-blue-600 dark:text-blue-400" />
-                </div>
-                Videos are saved to a 'downloads' folder on the server
-              </li>
-            </ul>
-            
+
             <div className="mt-6 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-500 dark:border-yellow-600">
               <p className="text-sm text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
                 <Info size={16} className="shrink-0" />

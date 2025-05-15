@@ -27,8 +27,8 @@ const montserrat = Montserrat({
 });
 
 export const metadata = {
-  title: "Chat",
-  description: "Modern chat interface for legal assistance",
+  title: "ScrapeTube",
+  description: "The ultimate tool to download entire YouTube playlists in Full HD quality",
 };
 
 export default function RootLayout({ children }) {

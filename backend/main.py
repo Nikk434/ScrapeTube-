@@ -1,6 +1,8 @@
 import yt_dlp
 import os
 import re
+import shutil
+import tempfile
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 
@@ -35,7 +37,9 @@ def download_youtube_playlist(playlist_url, download_path):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([playlist_url])
 
+    zip_path = shutil.make_archive("playlist", 'zip', download_path)
     print("[INFO] Playlist download completed.")
+    return zip_path
 
 @app.route('/api/download', methods=['POST'])
 def download_playlist():
@@ -61,12 +65,17 @@ def download_playlist():
         if not downloaded_files:
             return jsonify({'status': 'error', 'message': 'No files downloaded'}), 500
 
+        zip_path = download_youtube_playlist(playlist_url, download_path)
         file_path = os.path.join(download_path, downloaded_files[0])
+        "./downloads.zip"
+        # Send the zipped playlist
         return send_file(
-            file_path, 
+            # zip_path,
+            "./playlist.zip",
+
             as_attachment=True,
-            download_name=os.path.basename(file_path),
-            mimetype='video/mp4'
+            download_name='playlist.zip',
+            mimetype='application/zip'
         )
 
     except Exception as e:

@@ -1,13 +1,14 @@
 import yt_dlp
 import os
 import re
-import shutil
-import tempfile
-from flask import Flask, request, jsonify, send_file
+import zipstream
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
+
+DOWNLOAD_DIR = './downloads'
 
 def clean_playlist_url(url):
     print(f"[DEBUG] Cleaning URL: {url}")
@@ -23,8 +24,6 @@ def sanitize_filename(filename):
 
 def download_youtube_playlist(playlist_url, download_path):
     print(f"[INFO] Attempting to download playlist from: {playlist_url}")
-
-    # yt-dlp handles playlist processing itself
     ydl_opts = {
         'format': 'bestvideo[height<=1080]+bestaudio/best',
         'outtmpl': os.path.join(download_path, '%(title).200s.%(ext)s'),
@@ -33,13 +32,29 @@ def download_youtube_playlist(playlist_url, download_path):
         'quiet': False,
         'progress_hooks': [lambda d: print(f"[YT-DLP] {d['status'].upper()}: {d.get('filename', '')}")],
     }
-
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([playlist_url])
 
-    zip_path = shutil.make_archive("playlist", 'zip', download_path)
-    print("[INFO] Playlist download completed.")
-    return zip_path
+def generate_and_cleanup_zip(file_paths):
+    z = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+    for file_path in file_paths:
+        arcname = os.path.basename(file_path)
+        z.write(file_path, arcname=arcname)
+    
+    # Generator to stream the zip content and delete files afterward
+    def stream_with_cleanup():
+        try:
+            for chunk in z:
+                yield chunk
+        finally:
+            print("[CLEANUP] Deleting downloaded files...")
+            for path in file_paths:
+                try:
+                    os.remove(path)
+                    print(f"[CLEANUP] Deleted: {path}")
+                except Exception as e:
+                    print(f"[CLEANUP] Failed to delete {path}: {e}")
+    return stream_with_cleanup()
 
 @app.route('/api/download', methods=['POST'])
 def download_playlist():
@@ -51,31 +66,28 @@ def download_playlist():
         return jsonify({'status': 'error', 'message': 'URL is required'}), 400
 
     playlist_url = clean_playlist_url(raw_url)
-    download_path = './downloads'
 
     try:
-        # Clean the downloads folder (optional)
-        for f in os.listdir(download_path):
-            os.remove(os.path.join(download_path, f))
+        # Clean download folder
+        os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+        for f in os.listdir(DOWNLOAD_DIR):
+            os.remove(os.path.join(DOWNLOAD_DIR, f))
 
-        download_youtube_playlist(playlist_url, download_path)
+        # Download
+        download_youtube_playlist(playlist_url, DOWNLOAD_DIR)
 
-        # Get the first downloaded file (assuming one video for simplicity)
-        downloaded_files = os.listdir(download_path)
+        downloaded_files = [
+            os.path.join(DOWNLOAD_DIR, f) for f in os.listdir(DOWNLOAD_DIR)
+        ]
         if not downloaded_files:
             return jsonify({'status': 'error', 'message': 'No files downloaded'}), 500
 
-        zip_path = download_youtube_playlist(playlist_url, download_path)
-        file_path = os.path.join(download_path, downloaded_files[0])
-        "./downloads.zip"
-        # Send the zipped playlist
-        return send_file(
-            # zip_path,
-            "./playlist.zip",
+        zip_stream = generate_and_cleanup_zip(downloaded_files)
 
-            as_attachment=True,
-            download_name='playlist.zip',
-            mimetype='application/zip'
+        return Response(
+            zip_stream,
+            mimetype='application/zip',
+            headers={'Content-Disposition': 'attachment; filename=playlist.zip'}
         )
 
     except Exception as e:
@@ -96,7 +108,6 @@ def playlist_data():
     try:
         with yt_dlp.YoutubeDL({'quiet': True, 'extract_flat': True}) as ydl:
             info = ydl.extract_info(playlist_url, download=False)
-            # print("info",info)
 
         if 'entries' not in info:
             return jsonify({'status': 'error', 'message': 'No entries found in playlist'}), 404
@@ -111,7 +122,6 @@ def playlist_data():
             playlist_info['videos'].append({
                 'title': entry.get('title', 'Untitled'),
                 'thumbnail': entry['thumbnails'][-1]['url'] if 'thumbnails' in entry and entry['thumbnails'] else '',
-
                 'progress': '0%'
             })
 

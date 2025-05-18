@@ -229,7 +229,7 @@ export default function Home() {
             <div className="text-center p-6 bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 transition-colors">
               <div className="w-14 h-14 mx-auto bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 text-xl font-bold mb-4">1</div>
               <h3 className="text-lg font-semibold mb-2 text-slate-800 dark:text-slate-100">Paste Playlist URL</h3>
-              <p className="text-slate-600 dark:text-slate-300">Enter the URL of any YouTube playlist you want to download</p>
+              <p className="text-slate-600 dark:text-slate-300">Enter the URL of a public YouTube playlist you want to download</p>
             </div>
             <div className="text-center p-6 bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 transition-colors">
               <div className="w-14 h-14 mx-auto bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 text-xl font-bold mb-4">2</div>
@@ -239,7 +239,7 @@ export default function Home() {
             <div className="text-center p-6 bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 transition-colors">
               <div className="w-14 h-14 mx-auto bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 text-xl font-bold mb-4">3</div>
               <h3 className="text-lg font-semibold mb-2 text-slate-800 dark:text-slate-100">Get Your Videos</h3>
-              <p className="text-slate-600 dark:text-slate-300">Videos are saved to the server's downloads folder in high quality</p>
+              <p className="text-slate-600 dark:text-slate-300">Videos are downloaded in high quality and given as zip </p>
             </div>
           </div>
         </div>
